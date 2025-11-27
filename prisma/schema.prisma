@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("user") // "admin" | "user"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  projects      Project[]
+}
+
+model Project {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  rootUrl          String
+  businessName     String?
+  businessCategory String?
+  primaryLocation  String?
+  contactEmail     String?
+  contactPhone     String?
+  targetLanguage   String   @default("en")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  pages            Page[]
+}
+
+model Page {
+  id             String                  @id @default(auto()) @map("_id") @db.ObjectId
+  projectId      String                  @db.ObjectId
+  project        Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url            String
+  pageType       String                  @default("other") // homepage, service, product, etc.
+  statusCode     Int?
+  lastCrawledAt  DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  rawData        PageRawData?
+  recommendation PageLLMORecommendation?
+
+  @@unique([projectId, url])
+}
+
+model PageRawData {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  pageId         String   @unique @db.ObjectId
+  page           Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title          String?
+  metaDesc       String?
+  canonicalUrl   String?
+  languageAttr   String?
+  h1             String?
+  headings       String? // JSON string of H2/H3 array
+  cleanTextShort String? // First 200 words
+  cleanTextFull  String? // Truncated full text
+  faqBlocks      String? // JSON string of {question, answer} array
+  schemaJsonLd   String? // Raw JSON-LD string
+  robotsMeta     String?
+  internalLinks  String? // JSON string
+  outboundLinks  String? // JSON string
+  detectedDates  String? // JSON string
+  lastExtractedAt DateTime @default(now())
+}
+
+model PageLLMORecommendation {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  pageId          String   @unique @db.ObjectId
+  page            Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  llmoScore       Int      @default(0)
+  llmoSummary     String?
+  recommendedSeo  String?  // JSON: {title, meta_description, h1}
+  heroSectionHtml String?
+  bodySectionsHtml String? // JSON array of HTML sections
+  faqHtml         String?
+  jsonLdSchema    String?
+  robotsTxtSuggestion String?
+  internalLinkSuggestions String? // JSON array
+  checklistItems  String?  // JSON array
+  modelName       String?
+  createdAt       DateTime @default(now())
+}
