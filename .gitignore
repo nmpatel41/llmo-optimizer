@@ -19,8 +19,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables - CRITICAL: Never commit these!
-.env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -51,3 +49,4 @@ check-*.js
 
 # Public demo files (optional - uncomment if you don't want to share)
 # public/demo-*.html
+config.bat
